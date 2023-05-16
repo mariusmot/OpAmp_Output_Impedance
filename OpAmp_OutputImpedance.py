@@ -31,6 +31,8 @@ from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.chart.axis import ChartLines
 from openpyxl.utils import range_boundaries
+import sympy
+import re
 
 
 class OpAmp(unittest.TestCase):
@@ -166,6 +168,14 @@ class OpAmp(unittest.TestCase):
         # netlists are created
         LTC = SimCommander(file_path + "\\AC_Simulation.asc")
 
+        # first_line = len(LTC.netlist) - 9
+        # print(first_line)
+
+        # idx = len(LTC.netlist) - 4
+        # LTC.netlist.insert(idx, 'I1 0 out 0 AC 1\n')
+        # LTC.run()
+        # LTC.wait_completion
+
         #changing netlist file into txt file
         old_path = (file_path + "\\AC_Simulation.net")
         new_path = (file_path + "\\AC_Simulation_Result.txt")
@@ -182,28 +192,55 @@ class OpAmp(unittest.TestCase):
             lines = f.readlines()
         del lines[1]
         lines[1:3] = ["R1 N002 0 1\n", "C1 N002 0 1f\n"]
-        lines.insert(8, "I1 0 out 0 AC 1\n")
+        if self.testData['gain'] == '1':
+            lines.insert(6, "I1 0 out 0 AC 1\n")
+        else: 
+            lines.insert(8, "I1 0 out 0 AC 1\n") 
         line_to_modify = 3  
         position_to_modify = 9  
         new_character = "2"
         lines[line_to_modify] = lines[line_to_modify][:position_to_modify] + new_character + lines[line_to_modify][position_to_modify + 1:]
 
         #extract values of VDD-1 and VSS-1 and store them in variables
-        line7 = lines[6].rstrip()  # remove trailing newline character
-        num1_str = line7.split()[-1]  # extract last space-separated element of line
-        sym1 = float(num1_str)  # convert string to float
+        if self.testData['gain'] == '1':
+            line5 = lines[4].rstrip()  # remove trailing newline character
+            num1_str = line5.split()[-1]  # extract last space-separated element of line
+            sym1 = float(num1_str)  # convert string to float
 
-        line8 = lines[7].rstrip()  # remove trailing newline character
-        num2_str = line8.split()[-1]  # extract last space-separated element of line
-        sym2 = float(num2_str)  # convert string to float
+            line6 = lines[5].rstrip()  # remove trailing newline character
+            num2_str = line6.split()[-1]  # extract last space-separated element of line
+            sym2 = float(num2_str)  # convert string to float
+        else:
+            line7 = lines[6].rstrip()  # remove trailing newline character
+            num1_str = line7.split()[-1]  # extract last space-separated element of line
+            sym1 = float(num1_str)  # convert string to float
+
+            line8 = lines[7].rstrip()  # remove trailing newline character
+            num2_str = line8.split()[-1]  # extract last space-separated element of line
+            sym2 = float(num2_str)  # convert string to float
 
         #making numbers symmetrical
         def symmetrical(num1, num2):
-            avg = (num1 + num2) / 2
-            sym_num1 = 2 * avg - num1
-            sym_num2 = 2 * avg - num2
+            abs_num1 = abs(num1)
+            abs_num2 = abs(num2)
+
+            if abs_num1 == abs_num2:
+                return num1, num2
+            
+            avg = (abs_num1 + abs_num2) / 2
+            sym_abs_num1 = 2 * avg - abs_num1
+            sym_abs_num2 = 2 * avg - abs_num2
+            
+            if num1 < 0:
+                sym_num1 = -sym_abs_num1
+            else:
+                sym_num1 = sym_abs_num1
+            if num2 < 0:
+                sym_num2 = -sym_abs_num2
+            else:
+                sym_num2 = sym_abs_num2
             if sym_num1 == sym_num2:
-                return sym_num1, -sym_num2
+                return sym_num1, sym_num2
             else:
                 return (num1 + num2) / 2, -(num1 + num2) / 2
             
@@ -211,11 +248,19 @@ class OpAmp(unittest.TestCase):
         num2 = sym2
         sym_num1, sym_num2 = symmetrical(num1, num2)
 
-        line7_new = line7.replace(num1_str, str(sym_num1))  # replace last number with sym_num1
-        lines[6] = line7_new + "\n"  # add newline character back and update the list
+        if self.testData['gain'] == '1':
+            line5_new = line5.replace(num1_str, str(sym_num1))  # replace last number with sym_num1
+            lines[4] = line5_new + "\n"  # add newline character back and update the list
 
-        line8_new = lines[7].rsplit(' ', 1)[0] + f' {sym_num2}\n'
-        lines[7] = line8_new
+            line6_new = lines[5].rsplit(' ', 1)[0] + f' {sym_num2}\n'
+            lines[5] = line6_new
+        else:
+            line7_new = line7.replace(num1_str, str(sym_num1))  # replace last number with sym_num1
+            lines[6] = line7_new + "\n"  # add newline character back and update the list
+
+            line8_new = lines[7].rsplit(' ', 1)[0] + f' {sym_num2}\n'
+            lines[7] = line8_new
+        
 
         with open(new_path, "w") as f:
             f.writelines(lines)
@@ -231,37 +276,60 @@ class OpAmp(unittest.TestCase):
         new_path = os.path.join(dir_path, new_filename)
         shutil.copy(old_path1, new_path1)
 
-        LTC = SimCommander(file_path + "\\AC_Simulation_Result.net")
-        LTC.run()
-        LTC.wait_completion()
+        LTR = SimCommander(file_path + "\\AC_Simulation_Result.net")
+        LTR.run()
+        LTR.wait_completion()
 
         # Parse the LTSpice raw file
-        l = ltspice.Ltspice(file_path + "\\AC_Simulation_Result_1.raw")
-        l.parse()
+        t = ltspice.Ltspice(file_path + "\\AC_Simulation_Result_1.raw")
+        t.parse()
 
         # Get the V(out) trace data
-        freq = l.get_frequency()
-        Vout = l.get_data('V(out)')
+        freq = t.get_frequency()
+        Vout = t.get_data("V(out)")
 
         # Create a DataFrame with the frequency and V(onoise) data
-        data = {'Frequency (Hz)': freq, 'V(out)': Vout}
+        data = {'Frequency (Hz)': freq, 'V': Vout}
         df = pd.DataFrame(data)
 
         # Export the DataFrame to an Excel file
         ltspice_output_path = (project_path + '\\' + device + '_Output_Impedance.xlsx')
         df.to_excel(ltspice_output_path, index=False, engine='openpyxl')
 
-        #filter data
+        #filter data 
         workbook = openpyxl.load_workbook(ltspice_output_path)
         worksheet = workbook['Sheet1']
-        for cell in worksheet['B2:B{}'.format(worksheet.max_row)]:
-            cell_value = str(cell[0].value)
+        worksheet.cell(row=1, column=4, value='V(out)')
+
+        for row in worksheet.iter_rows(min_row=2, min_col=2, max_col=2):
+            cell_value = str(row[0].value)
             if '+' in cell_value:
-                cell_value = cell_value.split('+')[0][1:]
+                split_values = cell_value.split('+')
+                row[0].value = split_values[0][1:]
+                row[0].offset(column=1).value = split_values[1].strip()[:-1]
             elif '-' in cell_value:
-                cell_value = cell_value.split('-')[0][1:]
-            cell[0].value = float(cell_value)
-        workbook.save(ltspice_output_path)            
+                split_values = cell_value.split('-')
+                row[0].value = split_values[0][1:]
+                row[0].offset(column=1).value = "-" + split_values[1].strip()[:-1]
+
+        # Changing format from Cartesian to Polar
+        # In this script, I use the sympy library to handle complex number calculations symbolically. The sympy.sympify() function is used to convert the complex number strings 
+        # by replacing the "j" with "j*I" to indicate the imaginary unit. The sympy.sqrt() function is then used to calculate the square root, and the .evalf() method is used to 
+        # evaluate the result numerically.
+        for row in worksheet.iter_rows(min_row=2, min_col=2, max_col=4):
+            b_value = sympy.sympify(re.sub(r'j$', 'j*I', row[0].value)) if row[0].value else 0
+            c_value = sympy.sympify(re.sub(r'j$', 'j*I', row[1].value)) if row[1].value else 0
+            v_out = sympy.sqrt(abs(b_value)**2 + abs(c_value)**2).evalf()
+            row[2].value = str(v_out)       
+
+        workbook.save(ltspice_output_path)
+
+        fd = pd.read_excel(ltspice_output_path, sheet_name='Sheet1') 
+        column_name = 'V(out)'
+        #d[column_name] = df[column_name].astype(object)
+        fd[column_name] = pd.to_numeric(fd[column_name], errors='coerce')  
+        fd.to_excel(ltspice_output_path, index=False)
+
     
         # Converting the Amplifier - Input Referred Noise.csv to .xlsx
         path_file = pd.read_csv(project_path + '\\' + device + ' extracted files' + '\\' + 'Raw Data' + '\\' + 'Individual Stage Data' + '\\' + 'Amplifier' + '\\' + 'Amplifier - Input and Output Impedance.csv')
@@ -302,7 +370,7 @@ class OpAmp(unittest.TestCase):
 
         columnB = []
         for i in range(1, 1002, 1):
-            columnB.append(sheet1.cell(row=i, column=2).value)
+            columnB.append(sheet1.cell(row=i, column=4).value)
         for i in range(1, 1002, 1):
             for i in range(1, 1002, 1):
                 sheet2.cell(row=i, column=5).value = columnB[i - 1]
@@ -421,10 +489,13 @@ class OpAmp(unittest.TestCase):
 
         gain_sheet = xl['G' + gain]
 
-        # Apply formula to column D - LTSpice from gain_sheet 
-        # for cell in gain_sheet['D']:
-        #     if isinstance(cell.value, (int, float)):
-        #         cell.value = 10^(cell.value/20)
+        #Apply formula to column D - LTSpice from gain_sheet if necessary
+        if self.testData['transform_LTSpice_to_dB'] == 'Yes':
+            for cell in gain_sheet['D']:
+                if isinstance(cell.value, (int, float)):
+                    cell.value = 10 ** (cell.value/20)
+        else:
+            print("No formula applied to LTSpice data")            
 
         xl.create_sheet('G' + gain + ' Score')
         xl.save(results_file)

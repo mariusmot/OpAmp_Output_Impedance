@@ -10,8 +10,8 @@
         "load": "No",
             "comment4": "Select 'Yes' for load. Any other selection will select Design without a load",
         "device": "AD8646",
-        "gain": "10",
-        "R2": "10.2k",
+        "gain": "1",
+        "R2": "9.09k",
         "C2VALUE": "0",
         "downloads_path": "C:\\Users\\MMot\\Downloads\\",
             "_comment3": "Chrome downloads the files on user's downloads folder. The script will move the files from here to a more convenient path",
@@ -23,7 +23,9 @@
         "y_axis_max": "1e3",
             "_comment5": "X and Y axis are used to set the min and max for the chart. They're also used for scoring",
         "x_axis_title": "Frequency (Hz)",
-        "y_axis_title": "Output Impedance (Ohm)"
+        "y_axis_title": "Output Impedance (Ohm)",
+        "transform_LTSpice_to_dB": "No",
+            "_comment6": "choose 'Yes' to apply formula to LTSpice data"
         }
     ]
     }
