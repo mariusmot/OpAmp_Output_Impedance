@@ -10,7 +10,7 @@
         "load": "No",
             "comment4": "Select 'Yes' for load. Any other selection will select Design without a load",
         "device": "AD8646",
-        "gain": "1",
+        "gain": "10",
         "R2": "9.09k",
         "C2VALUE": "0",
         "downloads_path": "C:\\Users\\MMot\\Downloads\\",

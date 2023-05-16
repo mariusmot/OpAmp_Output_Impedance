@@ -191,15 +191,17 @@ class OpAmp(unittest.TestCase):
         with open(new_path, "r") as f:
             lines = f.readlines()
         del lines[1]
-        lines[1:3] = ["R1 N002 0 1\n", "C1 N002 0 1f\n"]
+        
         if self.testData['gain'] == '1':
+            lines = [line.replace("N002", "N001") for line in lines]
+            second_occurrence_index = lines[1].find('N001', lines[1].find('N001') + 1)
+            lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N001'):]
             lines.insert(6, "I1 0 out 0 AC 1\n")
-        else: 
-            lines.insert(8, "I1 0 out 0 AC 1\n") 
-        line_to_modify = 3  
-        position_to_modify = 9  
-        new_character = "2"
-        lines[line_to_modify] = lines[line_to_modify][:position_to_modify] + new_character + lines[line_to_modify][position_to_modify + 1:]
+        else:
+            lines = [line.replace("N003", "N002") for line in lines]  
+            second_occurrence_index = lines[1].find('N002', lines[1].find('N002') + 1)
+            lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N002'):]
+            lines.insert(8, "I1 0 out 0 AC 1\n")
 
         #extract values of VDD-1 and VSS-1 and store them in variables
         if self.testData['gain'] == '1':
@@ -259,8 +261,7 @@ class OpAmp(unittest.TestCase):
             lines[6] = line7_new + "\n"  # add newline character back and update the list
 
             line8_new = lines[7].rsplit(' ', 1)[0] + f' {sym_num2}\n'
-            lines[7] = line8_new
-        
+            lines[7] = line8_new        
 
         with open(new_path, "w") as f:
             f.writelines(lines)
@@ -362,17 +363,17 @@ class OpAmp(unittest.TestCase):
         sheet2 = xl['Sheet1']
 
         columnA = []
-        for i in range(1, 1002, 1):
+        for i in range(1, 1003, 1):
             columnA.append(sheet1.cell(row=i, column=1).value)
-        for i in range(1, 1002, 1):
-            for i in range(1, 1002, 1):
+        for i in range(1, 1003, 1):
+            for i in range(1, 1003, 1):
                 sheet2.cell(row=i, column=4).value = columnA[i - 1]
 
         columnB = []
-        for i in range(1, 1002, 1):
+        for i in range(1, 1003, 1):
             columnB.append(sheet1.cell(row=i, column=4).value)
-        for i in range(1, 1002, 1):
-            for i in range(1, 1002, 1):
+        for i in range(1, 1003, 1):
+            for i in range(1, 1003, 1):
                 sheet2.cell(row=i, column=5).value = columnB[i - 1]
 
         if 'Sheet11' in xl.sheetnames:
@@ -638,9 +639,9 @@ class OpAmp(unittest.TestCase):
                 cell_o = sheet1.cell(row=row, column=15)  # Column 7 corresponds to 'O' =INDEX('G2'!$A$2:$A$432,'G2 Score'!E3+1)
                 cell_o.value = f'=INDEX(INDIRECT("\'{sheet2_name}\'!$C$2:$C$1002"), M{row}+1)'
                 cell_p = sheet1.cell(row=row, column=16)  # Column 8 corresponds to 'P' =INDEX('G2'!$B$2:$B$432,'G2 Score'!E3)
-                cell_p.value = f'=20*LOG10(INDEX(INDIRECT("\'{sheet2_name}\'!$D$2:$D$1001"), M{row}))'
+                cell_p.value = f'=20*LOG10(INDEX(INDIRECT("\'{sheet2_name}\'!$D$2:$D$1002"), M{row}))'
                 cell_q = sheet1.cell(row=row, column=17)  # Column 9 corresponds to 'Q' =INDEX('G2'!$B$2:$B$432,'G2 Score'!E3+1)
-                cell_q.value = f'=20*LOG10(INDEX(INDIRECT("\'{sheet2_name}\'!$D$2:$D$1001"), M{row}+1))'
+                cell_q.value = f'=20*LOG10(INDEX(INDIRECT("\'{sheet2_name}\'!$D$2:$D$1002"), M{row}+1))'
                 cell_r = sheet1.cell(row=row, column=18)  # Column 10 corresponds to 'R' =SLOPE(H3:I3,F3:G3)*(C3-F3)+H3
                 cell_r.value = f'=SLOPE(P{row}:Q{row}, N{row}:O{row})*(C{row}-N{row})+P{row}'
                 cell_s = sheet1.cell(row=row, column=19)  # Column 11 corresponds to 'S' =ABS(J3-D3)
