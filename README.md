@@ -5,7 +5,7 @@ The source files must be in the same folder as the script files so that the scri
 
 Excel files with manual test data will be used as source files for datasheet data. All must be edited under below pattern:
 
-Name of the file: part + _WithScores (eg. **AD8420_WithScores**). Script can handle file names with multiple devices (eg. **AD8420_WithScores**).
+Name of the file: part + _WithScores (eg. **AD8420_WithScores**). Script can handle file names with multiple devices (eg. **ADA4627-1_ADA4637-1_WithScores**).
 
 Name of the sheet containing Datasheet numbers: **Datasheet**
 
