@@ -52,26 +52,14 @@ class OpAmp(unittest.TestCase):
         print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         driver = self.driver
         driver.maximize_window()
+        driver.get(self.testData['URL'])
 
-        # based on the json file the script will select With Load or Without Load Design.
-        if (self.testData['load'] == 'Yes'):
-            driver.get(self.testData['URL_with_load'])
-
-            #Accept Cookies
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#noise-spinner")))
-            WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.CSS_SELECTOR, "#noise-spinner")))
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-                By.CSS_SELECTOR, "body.ember-application:nth-child(2) div.consent-dialog:nth-child(1) div.modal.fade.in.show "
-                                "div.modal-dialog div.modal-content div.modal-body div.short-description > a.btn.btn-success:nth-child(2)"))).click()
-        else:
-            driver.get(self.testData['URL_without_load'])
-
-            #Accept Cookies
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#noise-spinner")))
-            WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.CSS_SELECTOR, "#noise-spinner")))
-            WebDriverWait(driver, 5).until(EC.presence_of_element_located((
-                By.CSS_SELECTOR, "body.ember-application:nth-child(2) div.consent-dialog:nth-child(1) div.modal.fade.in.show "
-                                "div.modal-dialog div.modal-content div.modal-body div.short-description > a.btn.btn-success:nth-child(2)"))).click()
+        #Accept Cookies
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#noise-spinner")))
+        WebDriverWait(driver, 10).until(EC.invisibility_of_element((By.CSS_SELECTOR, "#noise-spinner")))
+        WebDriverWait(driver, 5).until(EC.presence_of_element_located((
+            By.CSS_SELECTOR, "body.ember-application:nth-child(2) div.consent-dialog:nth-child(1) div.modal.fade.in.show "
+                            "div.modal-dialog div.modal-content div.modal-body div.short-description > a.btn.btn-success:nth-child(2)"))).click()
 
         gain = self.testData['gain']
         device = self.testData['device']
@@ -168,14 +156,6 @@ class OpAmp(unittest.TestCase):
         # netlists are created
         LTC = SimCommander(file_path + "\\AC_Simulation.asc")
 
-        # first_line = len(LTC.netlist) - 9
-        # print(first_line)
-
-        # idx = len(LTC.netlist) - 4
-        # LTC.netlist.insert(idx, 'I1 0 out 0 AC 1\n')
-        # LTC.run()
-        # LTC.wait_completion
-
         #changing netlist file into txt file
         old_path = (file_path + "\\AC_Simulation.net")
         new_path = (file_path + "\\AC_Simulation_Result.txt")
@@ -192,19 +172,25 @@ class OpAmp(unittest.TestCase):
             lines = f.readlines()
         del lines[1]
         
-        if gain == '1':
+        if int(gain) == 1:
             lines = [line.replace("N002", "N001") for line in lines]
             second_occurrence_index = lines[1].find('N001', lines[1].find('N001') + 1)
             lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N001'):]
             lines.insert(6, "I1 0 out 0 AC 1\n")
-        else:
+        elif int(gain) > 0:
             lines = [line.replace("N003", "N002") for line in lines]  
             second_occurrence_index = lines[1].find('N002', lines[1].find('N002') + 1)
             lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N002'):]
             lines.insert(8, "I1 0 out 0 AC 1\n")
+        elif int(gain) < 0:
+            lines = [line.replace("N002", "N001") for line in lines] 
+            lines = [line.replace("N003", "N002") for line in lines]
+            second_occurrence_index = lines[1].find('N001', lines[1].find('N001') + 1)
+            lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N001'):]
+            lines.insert(8, "I1 0 out 0 AC 1\n")
 
         #extract values of VDD-1 and VSS-1 and store them in variables
-        if gain == '1':
+        if int(gain) == 1:
             line5 = lines[4].rstrip()  # remove trailing newline character
             num1_str = line5.split()[-1]  # extract last space-separated element of line
             sym1 = float(num1_str)  # convert string to float
@@ -220,6 +206,7 @@ class OpAmp(unittest.TestCase):
             line8 = lines[7].rstrip()  # remove trailing newline character
             num2_str = line8.split()[-1]  # extract last space-separated element of line
             sym2 = float(num2_str)  # convert string to float
+
 
         #making numbers symmetrical
         def symmetrical(num1, num2):
@@ -469,7 +456,9 @@ class OpAmp(unittest.TestCase):
         destination_ws = xl.worksheets[0]
 
         device_name = device.lower()
-        matching_files = [filename for filename in os.listdir(project_path) if device_name in filename.lower()]
+        name_string = "_WithScores.xlsx"
+        search_string = device_name + name_string.lower()
+        matching_files = [filename for filename in os.listdir(project_path) if search_string in filename.lower()]
 
         if matching_files:
             source_file = os.path.join(project_path, matching_files[0])
@@ -488,7 +477,7 @@ class OpAmp(unittest.TestCase):
                 destination_ws.cell(row=i+2, column=6).value = row[columnB_index].value
 
         else:
-            raise Exception(gain + " Datasheet source file does not exist")
+            raise Exception(device + " Datasheet source file does not exist")
 
         print("Copying data from Datasheet")
 
