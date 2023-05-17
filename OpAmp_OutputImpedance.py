@@ -192,7 +192,7 @@ class OpAmp(unittest.TestCase):
             lines = f.readlines()
         del lines[1]
         
-        if self.testData['gain'] == '1':
+        if gain == '1':
             lines = [line.replace("N002", "N001") for line in lines]
             second_occurrence_index = lines[1].find('N001', lines[1].find('N001') + 1)
             lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N001'):]
@@ -204,7 +204,7 @@ class OpAmp(unittest.TestCase):
             lines.insert(8, "I1 0 out 0 AC 1\n")
 
         #extract values of VDD-1 and VSS-1 and store them in variables
-        if self.testData['gain'] == '1':
+        if gain == '1':
             line5 = lines[4].rstrip()  # remove trailing newline character
             num1_str = line5.split()[-1]  # extract last space-separated element of line
             sym1 = float(num1_str)  # convert string to float
@@ -468,8 +468,12 @@ class OpAmp(unittest.TestCase):
         xl = openpyxl.load_workbook(results_file)
         destination_ws = xl.worksheets[0]
 
-        if os.path.exists(project_path + '\\' + device + '_WithScores.xlsx'):
-            xl1 = openpyxl.load_workbook(project_path + '\\' + device + '_WithScores.xlsx')
+        device_name = device.lower()
+        matching_files = [filename for filename in os.listdir(project_path) if device_name in filename.lower()]
+
+        if matching_files:
+            source_file = os.path.join(project_path, matching_files[0])
+            xl1 = openpyxl.load_workbook(source_file)
             source_ws = xl1['Datasheet']
 
             headers = []
@@ -484,7 +488,7 @@ class OpAmp(unittest.TestCase):
                 destination_ws.cell(row=i+2, column=6).value = row[columnB_index].value
 
         else:
-            raise Exception(self.testData['device'] + " Datasheet source file does not exist")
+            raise Exception(gain + " Datasheet source file does not exist")
 
         print("Copying data from Datasheet")
 
