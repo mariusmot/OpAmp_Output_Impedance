@@ -4,7 +4,7 @@
         "URL": "https://beta-tools.analog.com/noise/#session=XsYRaptpDk_S0lEvt4TqiA&step=-PY3SpBkTrqHq2MUT36Xbg",
             "comment3": "URL should be from Design without load",
         "device": "AD8552",
-        "gain": "100",
+        "gain": "10",
         "R2": "2k",
         "C2VALUE": "0",
         "downloads_path": "C:\\Users\\MMot\\Downloads\\",

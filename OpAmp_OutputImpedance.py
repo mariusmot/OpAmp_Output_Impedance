@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 import zipfile
 import json
@@ -79,14 +79,19 @@ class OpAmp(unittest.TestCase):
             By.CSS_SELECTOR, "#text6747-2-6 > tspan.schematic-edit-icon.schematic-part-edit-selection-link.schematic-edit-selection-link" ))).click()
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filter-0'))).click()
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filter-0'))).send_keys(device)
-        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='base-container']/div[@id='main-content-container']/div[@id='application-view']/div[@id='config-signal-chain-item-modal']"
-                          "/div[1]/div[1]/div[1]/div[2]/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[4]/div[3]/div[1]/div[1]/div[1]"))).click()
-        
-        first_row = driver.find_element(By.CSS_SELECTOR, "#device-table > div.slick-pane.slick-pane-top.slick-pane-left > div.slick-viewport.slick-viewport-top.slick-viewport-left > div > div")
-        class_attribute = first_row.get_attribute('class')
-        if class_attribute and 'disabled' in class_attribute:
-            raise Exception(device + " can't be selected for G" + gain)                     
-        
+        #WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, "#partSelectModal2-title"))).click()
+
+        #check if part is present or not disabled in Nimble list
+        try:
+            element = driver.find_element(By.CSS_SELECTOR, "#device-table > div.slick-pane.slick-pane-top.slick-pane-left > div.slick-viewport.slick-viewport-top.slick-viewport-left > div > div")
+            class_attribute = element.get_attribute('class')
+            if class_attribute and 'disabled' in class_attribute:
+                raise Exception(device + " can't be selected in Nimble list")
+            else:
+                element.click()
+        except NoSuchElementException:
+            raise Exception(device + " can't be selected in Nimble list")
+            
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((
             By.CSS_SELECTOR, 'body.ember-application.modal-open:nth-child(2) div.adi-modal.modal-fills-window.modal-hide-scroll:nth-child(5) div.modal.fade.show.d-block:nth-child(1) '
             'div.modal-dialog div.modal-content div.modal-body div.configure-amp.configure-signal-chain-item div.adi-modal.modal-fills-window:nth-child(5) '
