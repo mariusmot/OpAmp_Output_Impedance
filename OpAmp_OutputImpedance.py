@@ -40,7 +40,7 @@ class OpAmp(unittest.TestCase):
     def setUp(self):
         #driver instance
         options = Options()
-        options.add_argument("--headless=new")
+        #options.add_argument("--headless=new")
         chromedriver_autoinstaller.install()
         self.driver = webdriver.Chrome(options=options)
         with open(r'opAmp_OutputImpedance.json')as d:
@@ -80,6 +80,12 @@ class OpAmp(unittest.TestCase):
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#filter-0'))).send_keys(device)
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, "//body/div[@id='base-container']/div[@id='main-content-container']/div[@id='application-view']/div[@id='config-signal-chain-item-modal']"
                           "/div[1]/div[1]/div[1]/div[2]/div[1]/div[4]/div[1]/div[1]/div[1]/div[2]/div[1]/div[2]/div[4]/div[3]/div[1]/div[1]/div[1]"))).click()
+        
+        first_row = driver.find_element(By.CSS_SELECTOR, "#device-table > div.slick-pane.slick-pane-top.slick-pane-left > div.slick-viewport.slick-viewport-top.slick-viewport-left > div > div")
+        class_attribute = first_row.get_attribute('class')
+        if class_attribute and 'disabled' in class_attribute:
+            raise Exception(device + " can't be selected for G" + gain)                     
+        
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((
             By.CSS_SELECTOR, 'body.ember-application.modal-open:nth-child(2) div.adi-modal.modal-fills-window.modal-hide-scroll:nth-child(5) div.modal.fade.show.d-block:nth-child(1) '
             'div.modal-dialog div.modal-content div.modal-body div.configure-amp.configure-signal-chain-item div.adi-modal.modal-fills-window:nth-child(5) '
@@ -109,7 +115,7 @@ class OpAmp(unittest.TestCase):
             else: 
                 position = minpos + (math.log(value) - minval) / scale 
                 return position
-            
+                       
         rposition = value_to_position(new_rvalue, 10, 10000000)
         c2position = value_to_position(new_c2value, 1e-15, 1e-6)
 

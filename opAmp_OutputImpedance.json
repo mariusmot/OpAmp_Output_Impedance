@@ -3,8 +3,8 @@
         {
         "URL": "https://beta-tools.analog.com/noise/#session=XsYRaptpDk_S0lEvt4TqiA&step=-PY3SpBkTrqHq2MUT36Xbg",
             "comment3": "URL should be from Design without load",
-        "device": "ADA4627-1",
-        "gain": "-100",
+        "device": "ADA4637-1",
+        "gain": "-10",
         "R2": "1k",
         "C2VALUE": "0",
         "downloads_path": "C:\\Users\\MMot\\Downloads\\",
