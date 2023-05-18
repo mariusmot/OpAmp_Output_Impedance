@@ -33,6 +33,7 @@ from openpyxl.chart.axis import ChartLines
 from openpyxl.utils import range_boundaries
 import sympy
 import re
+import glob
 
 
 class OpAmp(unittest.TestCase):
@@ -40,7 +41,7 @@ class OpAmp(unittest.TestCase):
     def setUp(self):
         #driver instance
         options = Options()
-        #options.add_argument("--headless=new")
+        options.add_argument("--headless=new")
         chromedriver_autoinstaller.install()
         self.driver = webdriver.Chrome(options=options)
         with open(r'opAmp_OutputImpedance.json')as d:
@@ -183,17 +184,23 @@ class OpAmp(unittest.TestCase):
             second_occurrence_index = lines[1].find('N001', lines[1].find('N001') + 1)
             lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N001'):]
             lines.insert(6, "I1 0 out 0 AC 1\n")
+            if device not in lines[3]:
+                raise Exception('LTspice data not available for ' + device )
         elif int(gain) > 0:
             lines = [line.replace("N003", "N002") for line in lines]  
             second_occurrence_index = lines[1].find('N002', lines[1].find('N002') + 1)
             lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N002'):]
             lines.insert(8, "I1 0 out 0 AC 1\n")
+            if device not in lines[3]:
+                raise Exception('LTspice data not available for ' + device )
         elif int(gain) < 0:
             lines = [line.replace("N002", "N001") for line in lines] 
             lines = [line.replace("N003", "N002") for line in lines]
             second_occurrence_index = lines[1].find('N001', lines[1].find('N001') + 1)
             lines[1] = lines[1][:second_occurrence_index] + '0' + lines[1][second_occurrence_index + len('N001'):]
             lines.insert(8, "I1 0 out 0 AC 1\n")
+            if device not in lines[3]:
+                raise Exception('LTspice data not available for ' + device )
 
         #extract values of VDD-1 and VSS-1 and store them in variables
         if int(gain) == 1:
@@ -212,6 +219,7 @@ class OpAmp(unittest.TestCase):
             line8 = lines[7].rstrip()  # remove trailing newline character
             num2_str = line8.split()[-1]  # extract last space-separated element of line
             sym2 = float(num2_str)  # convert string to float
+
 
 
         #making numbers symmetrical
@@ -458,13 +466,12 @@ class OpAmp(unittest.TestCase):
         print('Graph Complete')
 
         # Transfering datasheet from the Source file to the Results file
-        xl = openpyxl.load_workbook(results_file)
-        destination_ws = xl.worksheets[0]
-
         device_name = device.lower()
         name_string = "_WithScores.xlsx"
-        search_string = device_name + name_string.lower()
-        matching_files = [filename for filename in os.listdir(project_path) if search_string in filename.lower()]
+        matching_files = [filename for filename in os.listdir(project_path) if device_name in filename.lower() and name_string in filename]
+
+        xl = openpyxl.load_workbook(results_file)
+        destination_ws = xl.worksheets[0]
 
         if matching_files:
             source_file = os.path.join(project_path, matching_files[0])
@@ -476,7 +483,7 @@ class OpAmp(unittest.TestCase):
                 headers.append(cell.value)
 
             columnA_index = headers.index('G' + gain + ' freq')
-            columnB_index = headers.index('G' + gain + ' value')
+            columnB_index = headers.index('G' + gain + ' values')
 
             for i, row in enumerate(source_ws.iter_rows(min_row=2)):
                 destination_ws.cell(row=i+2, column=5).value = row[columnA_index].value
