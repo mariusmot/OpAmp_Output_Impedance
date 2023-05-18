@@ -11,4 +11,4 @@ Script can handle file names with multiple devices (eg. **ADA4627-1_ADA4637-1_Wi
 
 Name of the sheet containing Datasheet numbers: **Datasheet**
 
-Columns containing datasheet data must have a **row Header** that specifies the gain used (eg. **G10 freq** and **G10 value**). Data in these columns should start with second row
+Columns containing datasheet data must have a **row Header** that specifies the gain used (eg. **G10 freq** and **G10 values**). Data in these columns should start with second row
